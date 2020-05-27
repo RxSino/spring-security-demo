@@ -1,6 +1,9 @@
 package com.example.springsecuritydemo.security;
 
-import com.example.springsecuritydemo.jwt.*;
+import com.example.springsecuritydemo.jwt.JwtAccessDeniedHandler;
+import com.example.springsecuritydemo.jwt.JwtAuthenticationEntryPoint;
+import com.example.springsecuritydemo.jwt.JwtTokenProvider;
+import com.example.springsecuritydemo.props.SignatureProps;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,10 +22,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Autowired
-    private JwtUserDetailService userDetailService;
+    private UserDetailServiceImpl userDetailService;
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private SignatureProps signatureProps;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -31,15 +37,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        // 基于内存的用户存储
-//        auth.inMemoryAuthentication()
-//                .withUser("root")
-//                .password("123456")
-//                .authorities("ROOT");
-
         auth.userDetailsService(userDetailService)
                 .passwordEncoder(passwordEncoder());
-
     }
 
     @Override
@@ -57,10 +56,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .anyRequest()
                 .authenticated()
                 .and()
-                .addFilterBefore(new SignatureFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(new JwtTokenFilter(authenticationManager(), jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAt(new JwtLoginFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling().authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+                .addFilterAt(new AuthenticationFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class)
+                // 接口校验开关
+                //.addFilterBefore(new SignatureFilter(authenticationManager(), signatureProps), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new AuthorizationFilter(authenticationManager(), jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling()
+                .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
                 .accessDeniedHandler(new JwtAccessDeniedHandler());
     }
 

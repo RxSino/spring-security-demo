@@ -1,5 +1,7 @@
 package com.example.springsecuritydemo.jwt;
 
+import com.example.springsecuritydemo.service.UserService;
+import com.example.springsecuritydemo.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -12,32 +14,17 @@ import javax.servlet.http.HttpServletRequest;
 public class JwtTokenProvider {
 
     @Autowired
-    private JwtUserDetailService userDetailService;
+    private UserService userService;
 
-    public String createToken(String username) {
-        return "fake token";
-    }
-
-    public String resolveToken(HttpServletRequest request) {
+    public Authentication getAuthentication(HttpServletRequest request) {
         String authorization = request.getHeader("Authorization");
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            return authorization.substring(7);
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return null;
         }
-        return null;
-    }
-
-    public boolean validateToken(String token) throws Exception {
-        return true;
-    }
-
-    public String getUsername(String token) throws Exception {
-        return "root";
-    }
-
-    public Authentication getAuthentication(String token) throws Exception {
-        String username = getUsername(token);
-        UserDetails userDetails = userDetailService.loadUserByUsername(username);
-        return new UsernamePasswordAuthenticationToken(username, "", userDetails.getAuthorities());
+        String token = authorization.substring(7);
+        String uid = JwtUtils.getUid(token);
+        UserDetails userDetails = userService.loadUserByUid(uid);
+        return new UsernamePasswordAuthenticationToken(uid, "", userDetails.getAuthorities());
     }
 
 }

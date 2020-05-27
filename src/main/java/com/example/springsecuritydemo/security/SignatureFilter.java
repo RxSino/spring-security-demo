@@ -1,7 +1,11 @@
 package com.example.springsecuritydemo.security;
 
+import com.alibaba.fastjson.JSON;
+import com.example.springsecuritydemo.data.ResponseData;
+import com.example.springsecuritydemo.props.SignatureProps;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.util.DigestUtils;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -12,26 +16,37 @@ import java.util.Date;
 
 public class SignatureFilter extends BasicAuthenticationFilter {
 
-    public SignatureFilter(AuthenticationManager authenticationManager) {
+    private SignatureProps signatureProps;
+
+    public SignatureFilter(AuthenticationManager authenticationManager,
+                           SignatureProps signatureProps) {
         super(authenticationManager);
+        this.signatureProps = signatureProps;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
-        String timestamp = request.getHeader("Signature");
-        if (timestamp == null || timestamp.equals("")) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("text/html;charset=UTF-8");
-            response.getWriter().write("接口校验失败");
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain chain) throws IOException, ServletException {
+        String signature = request.getHeader("Signature");
+        String timestamp = request.getHeader("Timestamp");
+        String nonce = request.getHeader("Nonce");
+
+        if (signature == null || timestamp == null || nonce == null || !sign(timestamp, nonce, signature)) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write(JSON.toJSONString(ResponseData.signatureError()));
             return;
         }
         chain.doFilter(request, response);
     }
 
-    private boolean verifyTimestamp(String timestamp) {
-        long timestampL = Long.parseLong(timestamp);
-        long timestampN = new Date().getTime();
-        return timestampL < timestampN;
+    // 注意参数顺序： token + timestamp + nonce
+    private boolean sign(String timestamp, String nonce, String signature) {
+        String token = signatureProps.getToken();
+        String string = token + timestamp + nonce;
+        String rightSignature = DigestUtils.md5DigestAsHex(string.getBytes());
+        return signature.equals(rightSignature);
     }
 
 }

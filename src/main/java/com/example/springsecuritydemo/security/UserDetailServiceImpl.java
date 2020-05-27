@@ -1,4 +1,4 @@
-package com.example.springsecuritydemo.jwt;
+package com.example.springsecuritydemo.security;
 
 import com.example.springsecuritydemo.entity.UserEntity;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Component
-public class JwtUserDetailService implements UserDetailsService {
+public class UserDetailServiceImpl implements UserDetailsService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
