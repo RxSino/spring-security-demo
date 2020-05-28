@@ -2,7 +2,6 @@ package com.example.springsecuritydemo.jwt;
 
 import com.example.springsecuritydemo.service.UserService;
 import com.example.springsecuritydemo.utils.JwtUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,8 +12,11 @@ import javax.servlet.http.HttpServletRequest;
 @Component
 public class JwtTokenProvider {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+
+    public JwtTokenProvider(UserService userService) {
+        this.userService = userService;
+    }
 
     public Authentication getAuthentication(HttpServletRequest request) {
         String authorization = request.getHeader("Authorization");
