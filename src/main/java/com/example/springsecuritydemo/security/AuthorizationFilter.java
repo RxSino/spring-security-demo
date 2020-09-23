@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.example.springsecuritydemo.data.ResponseData;
 import com.example.springsecuritydemo.jwt.JwtTokenProvider;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
@@ -27,16 +28,20 @@ public class AuthorizationFilter extends BasicAuthenticationFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain) throws IOException, ServletException {
-        // 获取Authentication
-        Authentication authentication = tokenProvider.getAuthentication(request);
-        if (authentication != null) {
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        // 不需要 TOKEN
+        if (request.getServletPath().startsWith("/register/")) {
             chain.doFilter(request, response);
         } else {
-            SecurityContextHolder.clearContext();
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write(JSON.toJSONString(ResponseData.tokenError()));
+            Authentication authentication = tokenProvider.getAuthentication(request);
+            if (authentication != null) {
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                chain.doFilter(request, response);
+            } else {
+                SecurityContextHolder.clearContext();
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write(JSON.toJSONString(ResponseData.tokenError()));
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-package com.example.springsecuritydemo.jwt;
+package com.example.springsecuritydemo.security;
 
 import com.alibaba.fastjson.JSON;
 import com.example.springsecuritydemo.data.ResponseData;
@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Component
-public class JwtAccessDeniedHandler implements AccessDeniedHandler {
+public class MyAccessDeniedHandler implements AccessDeniedHandler {
 
     @Override
     public void handle(HttpServletRequest request,

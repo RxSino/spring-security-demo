@@ -1,7 +1,5 @@
 package com.example.springsecuritydemo.security;
 
-import com.example.springsecuritydemo.jwt.JwtAccessDeniedHandler;
-import com.example.springsecuritydemo.jwt.JwtAuthenticationEntryPoint;
 import com.example.springsecuritydemo.jwt.JwtTokenProvider;
 import com.example.springsecuritydemo.props.SignatureProps;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +9,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -24,7 +24,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Autowired
-    private UserDetailServiceImpl userDetailService;
+    private UserDetailsService userDetailService;
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
@@ -33,10 +33,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private SignatureProps signatureProps;
 
     @Autowired
-    private JwtAccessDeniedHandler accessDeniedHandler;
+    private MyAccessDeniedHandler accessDeniedHandler;
 
     @Autowired
-    private JwtAuthenticationEntryPoint authenticationEntryPoint;
+    private MyAuthenticationEntryPoint authenticationEntryPoint;
 
     @Bean
     @Override
@@ -46,7 +46,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return NoOpPasswordEncoder.getInstance();
+        //return new BCryptPasswordEncoder();
     }
 
     @Override
@@ -57,29 +58,43 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        SignatureFilter signatureFilter = new SignatureFilter(signatureProps);
+
+        AuthenticationFilter authenticationFilter = new AuthenticationFilter();
+        authenticationFilter.setAuthenticationManager(authenticationManager());
+
+        AuthorizationFilter authorizationFilter = new AuthorizationFilter(authenticationManager(), jwtTokenProvider);
+
         http
                 .cors()
-                .and()
-                .csrf().disable()
+                .and().csrf().disable()
 
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+
                 .and()
                 .authorizeRequests()
-                .antMatchers("/register").permitAll()
-                .antMatchers("/login").permitAll()
-                .anyRequest()
-                .authenticated()
-                .and()
-                .addFilterAt(new AuthenticationFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class)
-                // 接口校验开关
-//                .addFilterBefore(new SignatureFilter(authenticationManager(), signatureProps), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(new AuthorizationFilter(authenticationManager(), jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+                .antMatchers("/register/**").permitAll()
+                .anyRequest().authenticated()
 
-                // 不需要？？？？
+                .and()
+                .addFilterBefore(signatureFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAt(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(authorizationFilter, UsernamePasswordAuthenticationFilter.class)
+
                 .exceptionHandling()
                 .accessDeniedHandler(accessDeniedHandler)
                 .authenticationEntryPoint(authenticationEntryPoint);
+    }
+
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers("/ignore/**");
+
+//        // 若要加签名
+//        // 可以用 getServletPath 判断
+//        web.ignoring().antMatchers("/register/**");
+
     }
 
 }

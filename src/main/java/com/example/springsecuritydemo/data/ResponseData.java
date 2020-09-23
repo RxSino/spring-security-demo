@@ -6,6 +6,13 @@ public class ResponseData {
     public String message;
     public String token;
 
+    public static ResponseData unknownError() {
+        ResponseData data = new ResponseData();
+        data.code = "-1";
+        data.message = "未知错误";
+        return data;
+    }
+
     public static ResponseData signatureError() {
         ResponseData data = new ResponseData();
         data.code = "-1";
@@ -17,6 +24,13 @@ public class ResponseData {
         ResponseData data = new ResponseData();
         data.code = "-1";
         data.message = "Token错误";
+        return data;
+    }
+
+    public static ResponseData permissionError() {
+        ResponseData data = new ResponseData();
+        data.code = "-1";
+        data.message = "权限错误";
         return data;
     }
 

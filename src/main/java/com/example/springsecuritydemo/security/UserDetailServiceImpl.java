@@ -12,13 +12,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
+@Service("userDetailService")
 public class UserDetailServiceImpl implements UserDetailsService {
 
     @Autowired
@@ -26,6 +27,9 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        if (StringUtils.isEmpty(username)) {
+            throw new UsernameNotFoundException("username not null");
+        }
         return findOneByUsername(username)
                 .map(userEntity -> createUser(username, userEntity))
                 .orElseThrow(() -> new UsernameNotFoundException("username not found"));
@@ -33,6 +37,9 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
     // 模拟数据库，查找用户
     private Optional<UserEntity> findOneByUsername(String username) {
+        if (!"root".equals(username)) {
+            return Optional.empty();
+        }
         UserEntity entity = new UserEntity();
         entity.setUsername("root");
         entity.setPassword(passwordEncoder.encode("123456"));

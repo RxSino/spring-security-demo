@@ -6,6 +6,7 @@ import com.example.springsecuritydemo.props.SignatureProps;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.util.DigestUtils;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -14,13 +15,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Date;
 
-public class SignatureFilter extends BasicAuthenticationFilter {
+public class SignatureFilter extends OncePerRequestFilter {
 
     private SignatureProps signatureProps;
 
-    public SignatureFilter(AuthenticationManager authenticationManager,
-                           SignatureProps signatureProps) {
-        super(authenticationManager);
+    public SignatureFilter(SignatureProps signatureProps) {
         this.signatureProps = signatureProps;
     }
 

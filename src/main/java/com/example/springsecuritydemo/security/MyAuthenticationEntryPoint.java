@@ -1,4 +1,4 @@
-package com.example.springsecuritydemo.jwt;
+package com.example.springsecuritydemo.security;
 
 import com.alibaba.fastjson.JSON;
 import com.example.springsecuritydemo.data.ResponseData;
@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Component
-public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class MyAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest request,
@@ -20,7 +20,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
                          AuthenticationException authException) throws IOException, ServletException {
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(JSON.toJSONString(ResponseData.tokenError()));
+        response.getWriter().write(JSON.toJSONString(ResponseData.unknownError()));
     }
 
 }
